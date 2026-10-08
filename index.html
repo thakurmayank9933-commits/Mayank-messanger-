@@ -179,16 +179,17 @@
       .then(() => {
         loadRoom(currentRoom);
       })
-      .catch((error) => {
-        chat.innerHTML = `
-          <div class="message">
-            <strong>Error</strong>
-            ❌ Firebase login failed
-          </div>
-        `;
-        console.error(error);
-      });
-
+      
+.catch(error => {
+  chat.innerHTML = `
+    <div class="message">
+      <strong>❌ Firebase login failed</strong><br>
+      ${error.code}<br>
+      ${error.message}
+    </div>
+  `;
+  console.error(error);
+});
 
     function loadRoom(room) {
 
