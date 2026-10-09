@@ -191,45 +191,45 @@
   console.error(error);
 });
 
-    function loadRoom(room) {
+ function loadRoom(room) {
+  currentRoom = room;
 
-      currentRoom = room;
+  chat.innerHTML = "";
 
-      chat.innerHTML = `
-        <div class="message">
-          <strong>${getRoomName(room)}</strong>
-          🟢 Connected to Firebase
-        </div>
+  if (unsubscribe) {
+    unsubscribe();
+    unsubscribe = null;
+  }
+
+  const messagesRef = ref(database, "rooms/" + room + "/messages");
+
+  unsubscribe = onChildAdded(
+    messagesRef,
+    (snapshot) => {
+      const message = snapshot.val();
+      const div = document.createElement("div");
+
+      div.className =
+        message.sender === "Mayank" ? "message mine" : "message";
+
+      div.innerHTML = `
+        <strong>${escapeHtml(message.sender || "User")}</strong>
+        ${escapeHtml(message.text || "")}
       `;
 
-      if (unsubscribe) {
-        unsubscribe();
-      }
-
-      const messagesRef = ref(
-        database,
-        "rooms/" + room + "/messages"
-      );
-
-      unsubscribe = onChildAdded(messagesRef, (snapshot) => {
-
-        const message = snapshot.val();
-
-        const div = document.createElement("div");
-
-        div.className = message.sender === "Mayank" ? "message mine" : "message";
-
-        div.innerHTML = `
-          <strong>${escapeHtml(message.sender || "User")}</strong>
-          ${escapeHtml(message.text || "")}
-        `;
-
-        chat.appendChild(div);
-
-        chat.scrollTop = chat.scrollHeight;
-      }):
-
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    },
+    (error) => {
+      chat.innerHTML = `
+        <div class="message">
+          <strong>Database error</strong>
+          ${escapeHtml(error.message)}
+        </div>
+      `;
     }
+  );
+}   
       function sendMessage() {
 
       const text = input.value.trim();
