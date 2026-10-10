@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mayank Messenger</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:Arial,sans-serif; background:#0b141a; color:white; }
+    .header { background:#202c33; padding:18px; text-align:center; font-size:22px; font-weight:bold; }
+    .hidden { display:none !important; }
+    .auth-wrap { max-width:460px; margin:24px auto; padding:16px; }
+    .auth-card { background:#202c33; border-radius:18px; padding:20px; }
+    .auth-card h2 { margin:0 0 14px; font-size:23px; }
+    .auth-card p { color:#c4d0d6; line-height:1.4; }
+    .auth-card label { display:block; margin:14px 0 7px; color:#c4d0d6; }
+    .auth-card input { width:100%; padding:14px; border:0; border-radius:10px; background:#0b141a; color:white; font-size:16px; }
+    .auth-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+    .auth-actions button { border:0; border-radius:10px; padding:13px 16px; font-size:16px; cursor:pointer; }
+    .primary { background:#00a884; color:white; }
+    .secondary { background:#35464f; color:white; }
+    #authStatus { margin-top:12px; color:#ffd166; overflow-wrap:anywhere; white-space:pre-wrap; }
+    .userbar { background:#111b21; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; overflow-wrap:anywhere; }
+    .rooms { display:flex; gap:8px; padding:10px; background:#111b21; overflow-x:auto; }
+    .room { border:0; padding:12px 16px; border-radius:20px; background:#202c33; color:white; font-size:15px; white-space:nowrap; }
+    .room.active { background:#00a884; }
+    .chat { height:calc(100vh - 235px); min-height:180px; overflow-y:auto; padding:15px; }
+    .message { background:#202c33; padding:10px 14px; border-radius:14px; margin-bottom:10px; max-width:80%; width:fit-content; overflow-wrap:break-word; box-shadow:0 2px 5px rgba(0,0,0,.2); }
+    .message.mine { margin-left:auto; background:#005c4b; }
+    .message strong { color:#53bdeb; display:block; margin-bottom:4px; }
+    .input-area { position:fixed; bottom:0; left:0; right:0; background:#202c33; padding:10px; display:flex; gap:8px; }
+    #messageInput { flex:1; min-width:0; padding:13px; border:0; border-radius:25px; outline:none; font-size:16px; }
+    #sendButton { border:0; border-radius:50%; width:48px; height:48px; background:#00a884; color:white; font-size:20px; }
+  </style>
+</head>
+<body>
+  <div class="header">💬 Mayank Messenger</div>
+
+  <section id="authView" class="auth-wrap">
+    <div class="auth-card">
+      <h2>Welcome to Mayank Messenger</h2>
+      <p>Sign in to open your chats on this phone.</p>
+      <label for="emailInput">Email address</label>
+      <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email">
+      <label for="passwordInput">Password (at least 6 characters)</label>
+      <input id="passwordInput" type="password" placeholder="Enter password" autocomplete="current-password">
+      <div class="auth-actions">
+        <button id="loginButton" class="primary">Sign in</button>
+        <button id="signupButton" class="secondary">Create account</button>
+      </div>
+      <div id="authStatus" role="status"></div>
+      <p><small>Use your own email and password. Never share your password.</small></p>
+    </div>
+  </section>
+
+  <section id="appView" class="hidden">
+    <div class="userbar">
+      <span id="signedInAs">Signed in</span>
+      <button id="logoutButton" class="secondary">Log out</button>
+    </div>
+    <div class="rooms">
+      <button class="room active" data-room="mayank">👤 Mayank</button>
+      <button class="room" data-room="army">🪖 Army Buddy</button>
+      <button class="room" data-room="family">👨‍👩‍👦 Family</button>
+    </div>
+    <div id="chat" class="chat">
+      <div class="message"><strong>Mayank Messenger</strong>Connecting to Firebase...</div>
+    </div>
+    <div class="input-area">
+      <input id="messageInput" type="text" placeholder="Type a message..." autocomplete="off">
+      <button id="sendButton" aria-label="Send message">➤</button>
+    </div>
+  </section>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
+      signInWithEmailAndPassword, signOut
+    } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
+    import {
+      getDatabase, ref, push, onChildAdded
+    } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBd4MXU2z-bRvKPpEKu1ZjK8h0fdBxo5DI",
+      authDomain: "mayank-messanger.firebaseapp.com",
+      databaseURL: "https://mayank-messanger-default-rtdb.firebaseio.com",
+      projectId: "mayank-messanger",
+      storageBucket: "mayank-messanger.firebasestorage.app",
+      messagingSenderId: "715953743940",
+      appId: "1:715953743940:web:517b21a068c41ef7e4f411",
+      measurementId: "G-FLGY5NQPG5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    const authView = document.getElementById("authView");
+    const appView = document.getElementById("appView");
+    const emailInput = document.getElementById("emailInput");
+    const passwordInput = document.getElementById("passwordInput");
+    const authStatus = document.getElementById("authStatus");
+    const signedInAs = document.getElementById("signedInAs");
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+
+    let currentRoom = "mayank";
+    let unsubscribe = null;
+
+    function showAuthMessage(message) { authStatus.textContent = message; }
+
+    document.getElementById("loginButton").addEventListener("click", async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      if (!email || !password) { showAuthMessage("Enter your email and password."); return; }
+      showAuthMessage("Signing in…");
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        showAuthMessage("");
+      } catch (error) {
+        showAuthMessage((error.code || "login/error") + ": " + error.message);
+      }
+    });
+
+    document.getElementById("signupButton").addEventListener("click", async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      if (!email || !password) { showAuthMessage("Enter an email and password."); return; }
+      if (password.length < 6) { showAuthMessage("Password must be at least 6 characters."); return; }
+      showAuthMessage("Creating account…");
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        showAuthMessage("");
+      } catch (error) {
+        showAuthMessage((error.code || "signup/error") + ": " + error.message);
+      }
+    });
+
+    document.getElementById("logoutButton").addEventListener("click", async () => {
+      try { await signOut(auth); }
+      catch (error) { showAuthMessage((error.code || "logout/error") + ": " + error.message); }
+    });
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        authView.classList.add("hidden");
+        appView.classList.remove("hidden");
+        signedInAs.textContent = user.email || "Signed in";
+        loadRoom(currentRoom);
+      } else {
+        if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+        appView.classList.add("hidden");
+        authView.classList.remove("hidden");
+        chat.innerHTML = "";
+      }
+    });
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function loadRoom(room) {
+      currentRoom = room;
+      chat.innerHTML = "";
+      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+      const messagesRef = ref(database, "rooms/" + room + "/messages");
+      unsubscribe = onChildAdded(messagesRef, snapshot => {
+        const message = snapshot.val() || {};
+        const div = document.createElement("div");
+        div.className = message.sender === (auth.currentUser?.email || "Mayank") ? "message mine" : "message";
+        div.innerHTML = "<strong>" + escapeHtml(message.sender || "User") + "</strong>" + escapeHtml(message.text || "");
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+      }, error => {
+        chat.textContent = "Database error: " + error.message;
+      });
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text || !auth.currentUser) return;
+      sendButton.disabled = true;
+      try {
+        await push(ref(database, "rooms/" + currentRoom + "/messages"), {
+          text,
+          sender: auth.currentUser.email || "Mayank",
+          uid: auth.currentUser.uid,
+          time: Date.now()
+        });
+        input.value = "";
+      } catch (error) {
+        chat.insertAdjacentText("beforeend", "Could not send message: " + error.message);
+      } finally {
+        sendButton.disabled = false;
+      }
+    }
+
+    document.querySelectorAll(".room").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".room").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        loadRoom(button.dataset.room);
+      });
+    });
+
+    sendButton.addEventListener("click", sendMessage);
+    input.addEventListener("keydown", event => { if (event.key === "Enter") sendMessage(); });
+  </script>
+</body>
+</html>
