@@ -1,0 +1,11 @@
+{
+  "id": "/Mayank-messanger-/",
+  "name": "Mayank Messenger",
+  "short_name": "Mayank",
+  "description": "Mayank Messenger - Real-time Firebase chat",
+  "start_url": "/Mayank-messanger/",
+  "scope": "/Mayank-messanger/",
+  "display": "standalone",
+  "background_color": "#0b141a",
+  "theme_color": "#00a889"
+}
