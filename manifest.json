@@ -7,5 +7,17 @@
   "scope": "/Mayank-messanger/",
   "display": "standalone",
   "background_color": "#0b141a",
-  "theme_color": "#00a889"
+  "theme_color": "#00a889",
+  "icons": [
+    {
+      "src": "192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
