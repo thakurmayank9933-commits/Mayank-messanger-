@@ -2,34 +2,74 @@ name: Build Mayank Messenger APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Check project files
-        run: |
-          echo "Mayank Messenger website files:"
-          ls -la
-          test -f index.html
-          test -f manifest.json
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Upload website source
+      - name: Prepare Messenger App
+        run: |
+          mkdir -p www
+          cp index.html www/
+          cp manifest.json www/ || true
+          cp 192.png www/ || true
+          cp 512.png www/ || true
+
+          cat > package.json <<'EOF'
+          {
+            "name": "mayank-messenger",
+            "version": "1.0.0",
+            "private": true,
+            "description": "Mayank Messenger Android App"
+          }
+          EOF
+
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.mayank.messenger",
+            "appName": "Mayank Messenger",
+            "webDir": "www"
+          }
+          EOF
+
+          npx cap add android
+
+      - name: Build Android APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: mayank-messenger-source
-          path: |
-            index.html
-            manifest.json
-            192.png
-            512.png
+          name: Mayank-Messenger-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
