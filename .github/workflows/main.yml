@@ -45,11 +45,26 @@ jobs:
           npx cap init "Mayank Messenger" "com.mayank.messenger" --web-dir www
           npx cap add android
 
+                 - name: Fix Kotlin dependency conflicts
+        run: |
+          cd android
+          echo "allprojects {" >> build.gradle
+          echo "    configurations.all {" >> build.gradle
+          echo "        resolutionStrategy.eachDependency {" >> build.gradle
+          echo "            if (requested.group == 'org.jetbrains.kotlin') {" >> build.gradle
+          echo "                useVersion '1.8.22'" >> build.gradle
+          echo "            }" >> build.gradle
+          echo "        }" >> build.gradle
+          echo "    }" >> build.gradle
+          echo "}" >> build.gradle
+
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug 
+
+  
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
