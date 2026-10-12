@@ -1,0 +1,35 @@
+name: Build Mayank Messenger APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Check project files
+        run: |
+          echo "Mayank Messenger website files:"
+          ls -la
+          test -f index.html
+          test -f manifest.json
+
+      - name: Upload website source
+        uses: actions/upload-artifact@v4
+        with:
+          name: mayank-messenger-source
+          path: |
+            index.html
+            manifest.json
+            192.png
+            512.png
