@@ -45,7 +45,7 @@ jobs:
           npx cap init "Mayank Messenger" "com.mayank.messenger" --web-dir www
           npx cap add android
 
-                 - name: Fix Kotlin dependency conflicts
+      - name: Fix Kotlin dependency conflicts
         run: |
           cd android
           echo "allprojects {" >> build.gradle
