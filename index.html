@@ -260,20 +260,130 @@
       return "Mayank Messenger";
     }
 
-
     document.querySelectorAll(".room").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".room")
+      .forEach(b => b.classList.remove("active"));
 
-      button.addEventListener("click", () => {
+    button.classList.add("active");
 
-        document.querySelectorAll(".room")
-          .forEach(b => b.classList.remove("active"));
+    if (button.dataset.room === "contacts") {
+      showContacts();
+      return;
+    }
 
-        button.classList.add("active");
+    document.getElementById("chat").style.display = "";
+    document.querySelector(".input-area").style.display = "flex";
+    loadRoom(button.dataset.room);
+  });
+});
 
-        loadRoom(button.dataset.room);
+function showContacts() {
+  const chat = document.getElementById("chat");
+  const inputArea = document.querySelector(".input-area");
+
+  inputArea.style.display = "none";
+  chat.style.display = "block";
+
+  const savedContacts = JSON.parse(
+    localStorage.getItem("mayankContacts") || "[]"
+  );
+
+  chat.innerHTML = `
+    <div style="padding:15px">
+      <h2>📞 My Contacts</h2>
+
+      <input id="contactName"
+        placeholder="Enter name"
+        style="padding:12px;width:100%;margin-bottom:10px">
+
+      <input id="contactPhone"
+        placeholder="Enter phone number"
+        type="tel"
+        style="padding:12px;width:100%;margin-bottom:10px">
+
+      <button id="addContact"
+        style="padding:12px;background:#00a884;color:white;border:0;border-radius:10px">
+        ➕ Add Contact
+      </button>
+
+      <input id="searchContact"
+        placeholder="🔍 Search contacts"
+        style="padding:12px;width:100%;margin-top:15px">
+
+      <div id="contactList"></div>
+    </div>
+  `;
+
+  function renderContacts(filter = "") {
+    const list = document.getElementById("contactList");
+
+    list.innerHTML = "";
+
+    savedContacts
+      .filter(c =>
+        (c.name + " " + c.phone)
+          .toLowerCase()
+          .includes(filter.toLowerCase())
+      )
+      .forEach((contact, index) => {
+        const item = document.createElement("div");
+        item.style.cssText =
+          "padding:12px;margin-top:10px;background:#202c33;border-radius:10px";
+
+        const title = document.createElement("strong");
+        title.textContent = contact.name;
+
+        const phone = document.createElement("div");
+        phone.textContent = contact.phone;
+
+        const remove = document.createElement("button");
+        remove.textContent = "Delete";
+        remove.style.marginTop = "8px";
+
+        remove.onclick = () => {
+          savedContacts.splice(index, 1);
+          localStorage.setItem(
+            "mayankContacts",
+            JSON.stringify(savedContacts)
+          );
+          renderContacts(document.getElementById("searchContact").value);
+        };
+
+        item.append(title, phone, remove);
+        list.appendChild(item);
       });
+  }
 
-    });
+  document.getElementById("addContact").onclick = () => {
+    const name = document.getElementById("contactName").value.trim();
+    const phone = document.getElementById("contactPhone").value.trim();
+
+    if (!name || !phone) {
+      alert("Please enter both name and phone number.");
+      return;
+    }
+
+    savedContacts.push({ name, phone });
+
+    localStorage.setItem(
+      "mayankContacts",
+      JSON.stringify(savedContacts)
+    );
+
+    document.getElementById("contactName").value = "";
+    document.getElementById("contactPhone").value = "";
+
+    renderContacts();
+  };
+
+  document.getElementById("searchContact").oninput = event => {
+    renderContacts(event.target.value);
+  };
+
+  renderContacts();
+}
+    
 
 
     sendButton.addEventListener("click", sendMessage);
