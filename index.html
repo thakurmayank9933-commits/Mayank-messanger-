@@ -350,8 +350,23 @@ function showContacts() {
           renderContacts(document.getElementById("searchContact").value);
         };
 
-        item.append(title, phone, remove);
-        list.appendChild(item);
+       title.style.cursor = "pointer";
+
+title.onclick = () => {
+  const chatName = contact.name.trim();
+
+  document.getElementById("chat").style.display = "block";
+  document.querySelector(".input-area").style.display = "flex";
+
+  alert(
+    "Contact selected: " + chatName +
+    "\nPhone: " + contact.phone +
+    "\n\nTo send private messages, this contact must be connected to a Messenger account."
+  );
+};
+
+item.append(title, phone, remove);
+list.appendChild(item);
       });
   }
 
